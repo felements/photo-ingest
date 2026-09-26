@@ -7,8 +7,9 @@ public enum Bucket { Skip, NonMedia, Screenshots, WhatsApp, Media, Misc }
 public static class Rules
 {
     static readonly StringComparer IC = StringComparer.OrdinalIgnoreCase;
-    static readonly HashSet<string> SkipSegments = new(IC) { ".stfolder", ".thumbnails", "@eaDir", ".globalTrash", ".deleteRecord", ".trash", "Trash", "System Volume Information" };
-    static readonly HashSet<string> SkipNames = new(IC) { ".nomedia", "Thumbs.db", "desktop.ini" };
+    // Synology: @eaDir (thumbnails), #recycle / @Recycle, .SynologyWorkingDirectory, @tmp; QNAP: .@__thumb; Syncthing: .stfolder
+    static readonly HashSet<string> SkipSegments = new(IC) { ".stfolder", ".thumbnails", "@eaDir", "#recycle", "@Recycle", ".SynologyWorkingDirectory", "@tmp", ".@__thumb", ".globalTrash", ".deleteRecord", ".trash", "Trash", "System Volume Information" };
+    static readonly HashSet<string> SkipNames = new(IC) { ".nomedia", "Thumbs.db", "desktop.ini", ".DS_Store" };
     static readonly HashSet<string> NonMediaExt = new(IC) { "fb2", "epub", "pdf", "doc", "docx", "xls", "rtf", "djvu", "mp3", "opus", "zip", "unitypackage", "crypt12", "json", "txt", "ini", "bin", "records", "nar", "tnl", "cover" };
     static readonly HashSet<string> NonMediaSegments = new(IC) { "Books", "Documents", "Download", "Downloads", "Android" };
     static readonly HashSet<string> ScreenshotSegments = new(IC) { "Screenshots", "Screenshot", "ScreenRecorder", "Screen recordings" };
@@ -29,7 +30,7 @@ public static class Rules
         var ext = Ext(name);
         if (size == 0) return (Bucket.Skip, "empty");
         foreach (var d in dirs) if (SkipSegments.Contains(d)) return (Bucket.Skip, "dir:" + d);
-        if (SkipNames.Contains(name) || ext.Equals("tmp", StringComparison.OrdinalIgnoreCase) || name.EndsWith('~')) return (Bucket.Skip, "name");
+        if (SkipNames.Contains(name) || ext.Equals("tmp", StringComparison.OrdinalIgnoreCase) || name.EndsWith('~') || name.StartsWith("._")) return (Bucket.Skip, "name");
         if (NonMediaExt.Contains(ext)) return (Bucket.NonMedia, "ext:" + ext);
         foreach (var d in dirs) if (NonMediaSegments.Contains(d)) return (Bucket.NonMedia, "dir:" + d);
         foreach (var d in dirs) if (ScreenshotSegments.Contains(d)) return (Bucket.Screenshots, "dir:" + d);

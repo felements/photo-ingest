@@ -13,6 +13,14 @@ public class RulesTests
     [InlineData("a/b.tmp")]
     [InlineData("a/backup~")]
     [InlineData("Family/@eaDir/x.jpg")]
+    [InlineData("Family/@eaDir/PICT0979.JPG/SYNOFILE_THUMB_S.jpg")]
+    [InlineData("#recycle/old.jpg")]
+    [InlineData("photo/@Recycle/x.jpg")]
+    [InlineData("photo/.SynologyWorkingDirectory/x")]
+    [InlineData("photo/@tmp/x.jpg")]
+    [InlineData("photo/.@__thumb/x.jpg")]
+    [InlineData("trip/.DS_Store")]
+    [InlineData("trip/._IMG_1234.jpg")]
     public void Skips(string p) => Assert.Equal(Bucket.Skip, C(p));
 
     [Fact] public void SkipsEmptyFile() => Assert.Equal(Bucket.Skip, C("DCIM/Camera/IMG_1.jpg", 0));
@@ -44,6 +52,7 @@ public class RulesTests
     [InlineData("Camera/IMG_1.MP")]
     [InlineData("old-photo-scan/01.xcf")]
     [InlineData("VID_20140628_111416.3gp")]
+    [InlineData("trip/_IMG_1234.jpg")]
     [InlineData("raw/P4221326.ORF.pp3")]
     [InlineData("Camera roll/WP_000342.jpg.pp3")]
     [InlineData("x/MOV001.thm")]

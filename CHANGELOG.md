@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Skip more NAS and macOS artefacts: `#recycle`, `@Recycle`,
+  `.SynologyWorkingDirectory`, `@tmp`, `.@__thumb`, `.DS_Store`, `._*`.
+
 ## 0.1.1 (2026-09-26)
 
 - `version` command and `--version` flag.

@@ -142,7 +142,8 @@ namespace PhotoIngest
                               bucket. Writes only a _dry.log under _runs/.
 
             what happens to each file (first matching rule wins)
-              skip        trash and thumbnail dirs, .nomedia, zero-byte and temp files
+              skip        trash, recycle and thumbnail dirs (Synology @eaDir, #recycle; QNAP
+                          .@__thumb), .nomedia, .DS_Store, ._* forks, zero-byte and temp files
               nonmedia    books, documents, audio, archives, JSON, and anything under Books/,
                           Documents/, Download/, Android/
               screenshots Screenshots/ or ScreenRecorder/ dirs, names starting with Screenshot
