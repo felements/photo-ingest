@@ -36,6 +36,31 @@ public class CliTests
         Assert.StartsWith("photo-ingest: ", err.ToString());
     }
 
+    [Theory]
+    [InlineData("--version")]
+    [InlineData("version")]
+    public void VersionPrintsSemverAndExitsZero(string arg)
+    {
+        var w = new StringWriter();
+        Assert.Equal(0, Cli.Run(new[] { arg }, w, TextWriter.Null));
+        Assert.Matches(@"^photo-ingest \d+\.\d+\.\d+", w.ToString().Trim());
+    }
+
+    [Fact]
+    public void ProbeOnMissingFileReportsAndContinues()
+    {
+        var tmp = Path.GetTempFileName(); File.WriteAllText(tmp, "x");
+        try
+        {
+            var out_ = new StringWriter(); var err = new StringWriter();
+            var code = Cli.Run(new[] { "probe", "/nonexistent/IMG_20230705_201022.jpg", tmp }, out_, err);
+            Assert.Equal(1, code);
+            Assert.Contains("not found", err.ToString());
+            Assert.Contains(tmp, out_.ToString());          // the existing file was still probed
+        }
+        finally { File.Delete(tmp); }
+    }
+
     [Fact]
     public void HelpForOneCommandExplainsItsOptions()
     {

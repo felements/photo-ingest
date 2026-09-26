@@ -188,7 +188,7 @@ check the run log has no `error` lines and `verify` is clean first.
 ## Development
 
 ```bash
-dotnet test tests/PhotoIngest.Tests          # 136 tests, xunit
+dotnet test tests/PhotoIngest.Tests          # 139 tests, xunit
 dotnet run --project src/PhotoIngest -- help
 ```
 

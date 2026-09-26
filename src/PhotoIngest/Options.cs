@@ -22,6 +22,7 @@ public sealed class Options
     {
         var o = new Options { Command = a[0] };
         if (o.Command is "--help" or "-h") { o.Command = "help"; o.Help = true; }
+        if (o.Command is "--version" or "-V") o.Command = "version";
         for (int i = 1; i < a.Length; i++)
         {
             string Value() => i + 1 < a.Length ? a[++i] : throw new OptionsException($"option {a[i]} needs a value");

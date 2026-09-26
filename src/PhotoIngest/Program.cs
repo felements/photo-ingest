@@ -6,7 +6,12 @@ namespace PhotoIngest
 {
     public static class Cli
     {
-        static readonly string[] Commands = { "ingest", "report", "verify", "probe", "help" };
+        static readonly string[] Commands = { "ingest", "report", "verify", "probe", "help", "version" };
+
+        public static string Version =>
+            typeof(Cli).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0]
+            ?? typeof(Cli).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
         public static int Run(string[] args) => Run(args, Console.Out, Console.Error);
 
@@ -17,6 +22,7 @@ namespace PhotoIngest
             try { o = Options.Parse(args); }
             catch (OptionsException e) { err.WriteLine(e.Message); Usage(err); return 2; }
 
+            if (o.Command == "version") { out_.WriteLine($"photo-ingest {Version}"); return 0; }
             if (o.Command == "help")
             {
                 var topic = o.Positional.FirstOrDefault();
@@ -32,7 +38,7 @@ namespace PhotoIngest
                 case "ingest": using (var progress = Progress.Create(err, live)) return Ingest.Run(o, progress);
                 case "report": return Report.Run(o);
                 case "verify": using (var progress = Progress.Create(err, live)) return Verify.Run(o, progress);
-                case "probe": return Probe.Run(o);
+                case "probe": return Probe.Run(o, out_, err);
                 default: Usage(err); return 2;
             }
         }
@@ -48,6 +54,7 @@ namespace PhotoIngest
               verify [--archive DIR]
               probe <file>...
               help [command]        (also: --help, -h)
+              version               (also: --version)
             """);
 
         public static string HelpText(string? command) => command switch
@@ -90,6 +97,7 @@ namespace PhotoIngest
               verify              re-hash every archived file against the catalog
               probe <file>...     show how single files would be classified and dated
               help [command]      this text, or details for one command
+              version             print the version
 
             common option
               {Archive}

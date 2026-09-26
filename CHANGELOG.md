@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-09-26)
+
+- `version` command and `--version` flag.
+- `probe` reports a missing file on stderr and continues instead of crashing;
+  exits 1 if any file was missing.
+
 ## 0.1.0 (2026-09-26)
 
 First release.
