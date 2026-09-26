@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: linux-arm64
+            os: ubuntu-latest
+          - rid: win-x64
+            os: windows-latest
+          - rid: osx-x64
+            os: macos-latest
+          - rid: osx-arm64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Test
+        if: matrix.rid == 'linux-x64'
+        run: dotnet test tests/PhotoIngest.Tests -c Release
+      - name: Publish single-file binary
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet publish src/PhotoIngest -c Release -r ${{ matrix.rid }} --self-contained \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=none -p:Version="$VERSION" -o out
+          mkdir -p dist
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            (cd out && 7z a "../dist/photo-ingest-$VERSION-${{ matrix.rid }}.zip" photo-ingest.exe)
+          else
+            tar -C out -czf "dist/photo-ingest-$VERSION-${{ matrix.rid }}.tar.gz" photo-ingest
+          fi
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.rid }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: (cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+      - name: Release notes from CHANGELOG
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="## $VERSION" '$0 ~ "^## " {p = index($0, v) == 1} p' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Release $GITHUB_REF_NAME" > notes.md
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md
