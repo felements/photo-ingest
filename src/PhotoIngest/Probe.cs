@@ -14,7 +14,8 @@ public static class Probe
             if (!File.Exists(full)) { err.WriteLine($"{full}: not found"); missing++; continue; }
             var name = Path.GetFileName(full);
             var size = new FileInfo(full).Length;
-            var (bucket, reason) = Rules.Classify(name, size);
+            // directory rules (@eaDir, Trash, Books, WhatsApp…) are applied to the whole path, as a dump rooted above would see them
+            var (bucket, reason) = Rules.Classify(full.Replace('\\', '/'), size);
             var meta = Meta.FromMetadata(full, out var msrc);
             var mtime = File.GetLastWriteTime(full);
             var chosen = Resolve.For(full, name, _ => null, mtime);

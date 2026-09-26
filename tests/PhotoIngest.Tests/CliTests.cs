@@ -62,6 +62,21 @@ public class CliTests
     }
 
     [Fact]
+    public void ProbeAppliesDirectoryRulesToTheFullPath()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "probe-" + Guid.NewGuid());
+        var thumb = Path.Combine(root, "Friends", "@eaDir", "PICT0979.JPG", "SYNOFILE_THUMB_S.jpg");
+        Directory.CreateDirectory(Path.GetDirectoryName(thumb)!); File.WriteAllText(thumb, "t");
+        try
+        {
+            var w = new StringWriter();
+            Assert.Equal(0, Cli.Run(new[] { "probe", thumb }, w, TextWriter.Null));
+            Assert.Contains("bucket=Skip (dir:@eaDir)", w.ToString());
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void HelpForOneCommandExplainsItsOptions()
     {
         var w = new StringWriter();
