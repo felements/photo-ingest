@@ -17,6 +17,11 @@ public sealed class Catalog : IDisposable
         CREATE TABLE IF NOT EXISTS runs (
             id INTEGER PRIMARY KEY, started_at TEXT NOT NULL, finished_at TEXT, dump TEXT NOT NULL, source_root TEXT NOT NULL,
             event TEXT, dry_run INTEGER NOT NULL, counts_json TEXT);
+        CREATE TABLE IF NOT EXISTS dropped (
+            id INTEGER PRIMARY KEY, sha256 TEXT NOT NULL, size INTEGER NOT NULL, dest_rel TEXT NOT NULL, dump TEXT NOT NULL,
+            src_rel TEXT NOT NULL, run_id INTEGER NOT NULL, dropped_at TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS dropped_sha ON dropped(sha256);
+        CREATE INDEX IF NOT EXISTS dropped_dump_src ON dropped(dump, src_rel);
         CREATE INDEX IF NOT EXISTS files_dump_src ON files(dump, src_rel);
         CREATE INDEX IF NOT EXISTS dups_dump_src ON duplicates(dump, src_rel);
         """;
@@ -75,8 +80,30 @@ public sealed class Catalog : IDisposable
             SELECT 1 FROM files f JOIN runs r ON r.id=f.run_id WHERE f.dump=$d AND f.src_rel=$s AND f.size=$z AND r.source_root=$root
             UNION ALL
             SELECT 1 FROM duplicates x JOIN runs r ON r.id=x.run_id WHERE x.dump=$d AND x.src_rel=$s AND x.size=$z AND r.source_root=$root
+            UNION ALL
+            SELECT 1 FROM dropped x JOIN runs r ON r.id=x.run_id WHERE x.dump=$d AND x.src_rel=$s AND x.size=$z AND r.source_root=$root
             LIMIT 1
             """, ("$d", dump), ("$s", srcRel), ("$z", size), ("$root", sourceRoot)) != null;
+
+    /// <summary>Archived files whose dest_rel matches a SQL LIKE pattern (escape char '\').</summary>
+    public List<(long id, string sha, long size, string destRel, string dump, string srcRel)> FilesLike(string likePattern)
+        => Query(@"SELECT id, sha256, size, dest_rel, dump, src_rel FROM files WHERE dest_rel LIKE $p ESCAPE '\' ORDER BY dest_rel", ("$p", likePattern))
+            .Select(r => ((long)r[0]!, (string)r[1]!, (long)r[2]!, (string)r[3]!, (string)r[4]!, (string)r[5]!)).ToList();
+
+    /// <summary>Moves a file row to the dropped table; the hash stays known so the bytes are never copied again.</summary>
+    public void Drop(long fileId)
+    {
+        using var tx = db.BeginTransaction();
+        Exec("INSERT INTO dropped(sha256,size,dest_rel,dump,src_rel,run_id,dropped_at) SELECT sha256,size,dest_rel,dump,src_rel,run_id,$n FROM files WHERE id=$i", ("$n", Now()), ("$i", fileId));
+        Exec("DELETE FROM files WHERE id=$i", ("$i", fileId));
+        tx.Commit();
+    }
+
+    public string? FindDropped(string sha)
+    {
+        var rows = Query("SELECT dest_rel FROM dropped WHERE sha256=$h LIMIT 1", ("$h", sha));
+        return rows.Count == 0 ? null : (string)rows[0][0]!;
+    }
 
     public bool HasDest(string destRel) => Scalar("SELECT 1 FROM files WHERE dest_rel=$d", ("$d", destRel)) != null;
 

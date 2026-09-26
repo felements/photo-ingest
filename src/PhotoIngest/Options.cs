@@ -15,6 +15,7 @@ public sealed class Options
     public bool Undated;
     public string? Source;
     public bool Help;
+    public bool Delete;
 
     public static readonly string DefaultArchive = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Pictures", "archive");
 
@@ -33,6 +34,7 @@ public sealed class Options
                 case "--source": o.Source = Value(); break;
                 case "--dry-run": o.DryRun = true; break;
                 case "--undated": o.Undated = true; break;
+                case "--delete": o.Delete = true; break;
                 case "--help": case "-h": o.Help = true; break;
                 default:
                     if (a[i].StartsWith('-') && a[i].Length > 1) throw new OptionsException($"unknown option {a[i]}");

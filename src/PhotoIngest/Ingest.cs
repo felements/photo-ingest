@@ -161,6 +161,12 @@ public static class Ingest
                         if (!o.DryRun) cat.AddDuplicate(it.Sha, dump, it.Rel, it.Size, ofId, runId);
                         nDup++; Tick(it); continue;
                     }
+                    if (cat.FindDropped(it.Sha) is string droppedAs)
+                    {
+                        // these bytes were archived once and deliberately forgotten; do not bring them back
+                        counts.Add("dropped", it.Bucket); Log("dropped", it, p, droppedAs);
+                        nDup++; Tick(it); continue;
+                    }
 
                     // a name is taken if a file is on disk or the catalog still points at it (e.g. moved out by hand)
                     var dest = Naming.Dest(dir, prefix, Path.GetFileName(it.Rel), reserved,

@@ -33,6 +33,7 @@ public class OptionsTests
 
 public class OptionsParseErrors
 {
+    [Fact] public void DeleteFlag() { Assert.True(Options.Parse(new[] { "forget", "x", "--delete" }).Delete); Assert.False(Options.Parse(new[] { "forget", "x" }).Delete); }
     [Fact] public void HelpFlagAnywhere() { Assert.True(Options.Parse(new[] { "ingest", "/d", "--help" }).Help); Assert.True(Options.Parse(new[] { "-h" }).Help); }
     [Fact] public void UnknownFlagThrows() => Assert.Throws<OptionsException>(() => Options.Parse(new[] { "report", "--bogus" }));
     [Fact] public void MissingValueThrows() => Assert.Throws<OptionsException>(() => Options.Parse(new[] { "ingest", "/d", "--event" }));

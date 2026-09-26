@@ -98,7 +98,8 @@ folders: `--event georgia` gives `2016/2016-06 georgia/`.
    `.part` file, re-hashes the copy, then moves it into place and records it.
 6. Rewrites `_manifest.sha256` and finishes the run log.
 
-It only reads the dump. It writes only under the archive. It never deletes.
+It only reads the dump. It writes only under the archive. The only command that
+deletes anything is `forget --delete`, and only inside the archive.
 
 ## Archive layout
 
@@ -156,6 +157,17 @@ $ photo-ingest probe VID_20201217_212129.mp4
   chosen=2020-12-17 21:21:29 (Filename)
 ```
 
+Dropping something that should not have been archived, a 58 GB cloud export
+tarball say, while making sure it is never copied in again:
+
+```
+$ photo-ingest forget "_nonmedia/phone/misc/cloud/*.tgz"            # dry listing
+would forget  _nonmedia/phone/misc/cloud/takeout-001.tgz  53.7 GB  phone/cloud/takeout-001.tgz
+would forget  _nonmedia/phone/misc/cloud/takeout-002.tgz   4.1 GB  phone/cloud/takeout-002.tgz
+2 files, 57.8 GB; add --delete to forget them and delete the files
+$ photo-ingest forget "_nonmedia/phone/misc/cloud/*.tgz" --delete
+```
+
 Weakly dated files worth a look:
 
 ```bash
@@ -188,7 +200,7 @@ check the run log has no `error` lines and `verify` is clean first.
 ## Development
 
 ```bash
-dotnet test tests/PhotoIngest.Tests          # 148 tests, xunit
+dotnet test tests/PhotoIngest.Tests          # 158 tests, xunit
 dotnet run --project src/PhotoIngest -- help
 ```
 

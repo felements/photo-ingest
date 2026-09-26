@@ -6,7 +6,7 @@ namespace PhotoIngest
 {
     public static class Cli
     {
-        static readonly string[] Commands = { "ingest", "report", "verify", "probe", "help", "version" };
+        static readonly string[] Commands = { "ingest", "report", "verify", "probe", "forget", "help", "version" };
 
         public static string Version =>
             typeof(Cli).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
@@ -39,6 +39,7 @@ namespace PhotoIngest
                 case "report": return Report.Run(o);
                 case "verify": using (var progress = Progress.Create(err, live)) return Verify.Run(o, progress);
                 case "probe": return Probe.Run(o, out_, err);
+                case "forget": return Forget.Run(o, out_, err);
                 default: Usage(err); return 2;
             }
         }
@@ -53,6 +54,7 @@ namespace PhotoIngest
               report [--archive DIR] [--undated] [--source exif|video|sidecar|filename|folder|mtime|none]
               verify [--archive DIR]
               probe <file>...
+              forget <path-or-glob>... [--archive DIR] [--delete]
               help [command]        (also: --help, -h)
               version               (also: --version)
             """);
@@ -63,6 +65,7 @@ namespace PhotoIngest
             "report" => ReportHelp,
             "verify" => VerifyHelp,
             "probe" => ProbeHelp,
+            "forget" => ForgetHelp,
             "help" => GeneralHelp,
             _ => GeneralHelp,
         };
@@ -96,6 +99,7 @@ namespace PhotoIngest
               report              counts per month, bucket, dump and date source
               verify              re-hash every archived file against the catalog
               probe <file>...     show how single files would be classified and dated
+              forget <path>...    drop archived files while remembering their hashes
               help [command]      this text, or details for one command
               version             print the version
 
@@ -190,6 +194,33 @@ namespace PhotoIngest
 
             Note: do not move or rename files inside the archive by hand; verify will then
             report them as missing plus untracked. Promote into a curated gallery by copying.
+
+            """;
+
+        static readonly string ForgetHelp = $"""
+            usage: photo-ingest forget <path-or-glob>... [--archive DIR] [--delete]
+
+            Removes files from the archive on purpose: a 60 GB tarball that got swept in,
+            a folder of app junk, a video you do not want. The catalog keeps each file's
+            hash in a `dropped` table, so if the same bytes show up in a later dump they
+            are logged as `dropped` and not copied again.
+
+            Without --delete nothing happens: the matching files are listed with their
+            size and where they came from. Add --delete to remove them, move their catalog
+            rows to `dropped`, delete emptied folders and rewrite the manifest.
+
+            patterns   relative to the archive; an absolute path inside the archive is fine
+              _nonmedia/phone/misc/cloud/backup.tgz     one file
+              _nonmedia/phone/misc/cloud                everything below that folder
+              _nonmedia/*/misc/**/*.tgz                 * = within one folder, ** = across folders, ? = one char
+              "2016/2016-06 georgia/*.mp4"              quote patterns so the shell leaves them alone
+
+            options
+              {Archive}
+              --delete        actually do it (default is a dry listing)
+              --dry-run       list only, even with --delete
+
+            exit codes: 0 done or listed, 1 nothing matched, 2 usage error
 
             """;
 

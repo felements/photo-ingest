@@ -41,7 +41,7 @@ public static class Report
         foreach (var r in cat.Query("SELECT d.dump, (SELECT count(*) FROM files f WHERE f.dump=d.dump), (SELECT count(*) FROM duplicates x WHERE x.dump=d.dump) FROM (SELECT DISTINCT dump FROM files UNION SELECT DISTINCT dump FROM duplicates) d ORDER BY 1"))
             w.WriteLine($"{r[0]}\t{r[1]}\t{r[2]}");
         w.WriteLine();
-        w.WriteLine($"total files {cat.Count("files")}, duplicates {cat.Count("duplicates")}, runs {cat.Count("runs")}");
+        w.WriteLine($"total files {cat.Count("files")}, duplicates {cat.Count("duplicates")}, dropped {cat.Count("dropped")}, runs {cat.Count("runs")}");
         return 0;
     }
 }
